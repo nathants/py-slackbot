@@ -35,5 +35,8 @@
 - debug your lambda by tailing the logs
   - `aws-lambda-logs -f ~/my_slackbot.py`
 
+- iterate on your lambda quickly using [entr](http://entrproject.org/) to watch for file changes:
+  - `ls ~/my_slackbot.py | entr aws-lambda-deploy --yes --quick ~/my_slackbot.py`
+
 - tear down your lambda, api, and all associated resources with
   - `aws-lambda-rm --everything ~/my_slackbot.py`
