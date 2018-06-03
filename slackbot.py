@@ -35,7 +35,7 @@ def main(event, context):
         if 'command' in body:
             for conditional, command, handler in slash_handlers:
                 if body['command'][0] == command and conditional(body.get("text", [''])[0]):
-                    return handler(body)
+                    return handler(body.get("text", [''])[0])
     else:
         if "challenge" in body: # event subscriptions api auth
             return resp({'challenge': body['challenge']})
