@@ -4,9 +4,9 @@ from urllib import parse
 slash_handlers = []
 event_handlers = []
 
-def slash(command):
+def slash(command, conditional=lambda _: True):
     def fn(f):
-        slash_handlers.append([command, f])
+        slash_handlers.append([conditional, command, f])
         return f
     return fn
 
@@ -16,11 +16,14 @@ def event(conditional):
         return f
     return fn
 
-def resp(body):
-    return {'statusCode': '200',
-            'isBase64Encoded': False,
-            'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps(body) if not isinstance(body, str) else body}
+def resp(body, public=False):
+    if public:
+        body = {"response_type": "in_channel", "text": body}
+    x = {'statusCode': '200',
+         'isBase64Encoded': False,
+         'headers': {'Content-Type': 'application/json'},
+         'body': json.dumps(body) if not isinstance(body, str) else body}
+    return x
 
 def main(event, context):
     if 'body' not in event:
@@ -30,8 +33,8 @@ def main(event, context):
     except:
         body = parse.parse_qs(event['body'])
         if 'command' in body:
-            for command, handler in slash_handlers:
-                if body['command'][0] == command:
+            for conditional, command, handler in slash_handlers:
+                if body['command'][0] == command and conditional(body.get("text", [''])[0]):
                     return handler(body)
     else:
         if "challenge" in body: # event subscriptions api auth

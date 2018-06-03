@@ -18,7 +18,7 @@ def post(text):
     """
     requests.post(os.environ['web_hook_url'], data=json.dumps({'text': text}))
 
-@slackbot.slash('/test')
+@slackbot.slash('/test', lambda x: 'stuff' in x)
 def _(body):
     """
     https://api.slack.com/slash-commands
@@ -27,7 +27,7 @@ def _(body):
     post(f'i can post to the channel. thanks for: {text}')
     return slackbot.resp(f'i can also respond directly. thanks for: {text}')
 
-@slackbot.event(lambda e: 'foo bar' in e['text'])
+@slackbot.event(lambda x: 'foo bar' in x['text'])
 def _(event):
     """
     https://api.slack.com/events-api
