@@ -1,11 +1,21 @@
 import json
+import requests
+import os
+import boto3
 from urllib import parse
 
 token = None
 slash_handlers = []
 event_handlers = []
+delayed_handlers = []
 
-def slash(command, conditional=lambda _: True):
+def delayed(command):
+    def fn(f):
+        delayed_handlers.append([command, f])
+        return f
+    return fn
+
+def slash(command, conditional=lambda text: True):
     def fn(f):
         slash_handlers.append([conditional, command, f])
         return f
@@ -17,14 +27,28 @@ def event(conditional):
         return f
     return fn
 
-def resp(body, public=False):
+def resp(body, public=False, response_url=None):
+    if not isinstance(body, dict):
+        body = {'text': body}
     if public:
-        body = {"response_type": "in_channel", "text": body}
-    x = {'statusCode': '200',
-         'isBase64Encoded': False,
-         'headers': {'Content-Type': 'application/json'},
-         'body': json.dumps(body) if not isinstance(body, str) else body}
-    return x
+        body["response_type"] = "in_channel"
+    body = json.dumps(body)
+    if response_url:
+        resp = requests.post(response_url, data=body)
+        assert str(resp.status_code)[0] == '2', [resp, resp.text]
+    else:
+        return {'statusCode': '200', 'isBase64Encoded': False, 'headers': {'Content-Type': 'application/json'}, 'body': body}
+
+def delay(command, response_url, data, _file_):
+    name = os.path.basename(_file_).replace(' ', '-').replace('_', '-').split('.py')[0] # copied from: cli_aws.lambda_name()
+    val = {'body': json.dumps({'type': 'delayed',
+                               'data': data,
+                               'response_url': response_url,
+                               'command': command,
+                               'token': token})}
+    print(boto3.client('lambda').invoke(FunctionName=name,
+                                        InvocationType='Event',
+                                        Payload=bytes(json.dumps(val), 'utf-8')))
 
 def main(event, context, log_unmatched_events=False):
     if not token:
@@ -44,7 +68,7 @@ def main(event, context, log_unmatched_events=False):
         if 'command' in body:
             for conditional, command, handler in slash_handlers:
                 if body['command'][0] == command and conditional(body.get("text", [''])[0]):
-                    return handler(body.get("text", [''])[0])
+                    return handler(body.get("text", [''])[0], body['response_url'][0])
     else:
         if "challenge" in body:
             return resp({'challenge': body['challenge']})
@@ -52,6 +76,11 @@ def main(event, context, log_unmatched_events=False):
             for conditional, handler in event_handlers:
                 if conditional(body['event']):
                     handler(body['event'])
+                    return resp('')
+        elif body['type'] == 'delayed':
+            for command, handler in delayed_handlers:
+                if body['command'] == command:
+                    handler(body['response_url'], body['data'])
                     return resp('')
     if log_unmatched_events:
         print(f'nothing matched: {body}')
