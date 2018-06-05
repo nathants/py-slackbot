@@ -12,6 +12,8 @@ import requests
 import slackbot
 import os
 
+slackbot.token = 'SKIP' # this should be the verification token from your slack app
+
 def post(text):
     """
     https://api.slack.com/incoming-webhooks
