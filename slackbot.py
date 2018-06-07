@@ -73,7 +73,7 @@ def main(event, context, log_unmatched_events=False):
                 if body['command'][0] == command and conditional(text):
                     if kind == _async:
                         async(command, body['response_url'][0], text, inspect.getfile(handler))
-                        return _lambda_response(response('one moment please...'))
+                        return _lambda_response(response({'text': 'one moment please...', 'response_type': 'ephemeral'}))
                     else:
                         return _lambda_response(handler(text))
     else:
