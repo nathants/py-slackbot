@@ -38,7 +38,7 @@ def _lambda_response(body):
 def response(body):
     if not isinstance(body, dict):
         body = {'text': body}
-    body["response_type"] = "in_channel"
+    body["response_type"] = body.get("response_type", "in_channel")
     return body
 
 def async(command, response_url, data, _file_):
