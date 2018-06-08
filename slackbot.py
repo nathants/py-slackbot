@@ -35,10 +35,13 @@ def _lambda_response(body):
             'headers': {'Content-Type': 'application/json'},
             'body': json.dumps(body)}
 
-def response(body):
+def response(body, in_channel=True):
     if not isinstance(body, dict):
         body = {'text': body}
-    body["response_type"] = body.get("response_type", "in_channel")
+    if in_channel:
+        body["response_type"] = 'in_channel'
+    else:
+        body["response_type"] = 'ephemeral'
     return body
 
 def async(command, response_url, data, _file_):
@@ -73,7 +76,7 @@ def main(event, context, log_unmatched_events=False):
                 if body['command'][0] == command and conditional(text):
                     if kind == _async:
                         async(command, body['response_url'][0], text, inspect.getfile(handler))
-                        return _lambda_response(response({'text': 'one moment please...', 'response_type': 'ephemeral'}))
+                        return _lambda_response(response('one moment please...'))
                     else:
                         return _lambda_response(handler(text))
     else:
