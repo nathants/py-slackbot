@@ -22,7 +22,7 @@ def post(text):
     """
     requests.post(os.environ['web_hook_url'], data=json.dumps({'text': text}))
 
-@slackbot.slash('/test', lambda x: 'stuff' in x)
+@slackbot.slash('/test', lambda text: 'stuff' in text)
 def _(text):
     """
     https://api.slack.com/slash-commands
@@ -30,7 +30,7 @@ def _(text):
     post(f'i can post to the channel. thanks for: {text}')
     return slackbot.response(f'i can also respond directly. thanks for: {text}')
 
-@slackbot.slash_async('/test', lambda x: 'slow stuff' in x)
+@slackbot.slash_async('/test', lambda text: 'slow stuff' in text)
 def _(text):
     """
     the slash command handler must return in less than 3 seconds, so
@@ -39,7 +39,7 @@ def _(text):
     time.sleep(4)
     return slackbot.response(f'thanks for: {text}')
 
-@slackbot.event(lambda x: 'foo bar' in x['text'])
+@slackbot.event(lambda event: 'foo bar' in event['text'])
 def _(event):
     """
     https://api.slack.com/events-api

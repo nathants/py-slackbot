@@ -5,11 +5,10 @@ import os
 import boto3
 from urllib import parse
 
-_async = 'async'
+ASYNC = 'async'
 token = None
 slash_handlers = []
 event_handlers = []
-slash_handlers = []
 
 def slash(command, conditional=lambda text: True):
     def fn(f):
@@ -19,7 +18,7 @@ def slash(command, conditional=lambda text: True):
 
 def slash_async(command, conditional=lambda text: True):
     def fn(f):
-        slash_handlers.append([conditional, command, f, _async])
+        slash_handlers.append([conditional, command, f, ASYNC])
         return f
     return fn
 
@@ -44,9 +43,9 @@ def response(body, in_channel=True):
         body["response_type"] = 'ephemeral'
     return body
 
-def async(command, response_url, data, _file_):
+def asynchronous(command, response_url, data, _file_):
     name = os.path.basename(_file_).replace(' ', '-').replace('_', '-').split('.py')[0] # copied from: cli_aws.lambda_name()
-    val = {'body': json.dumps({'type': _async,
+    val = {'body': json.dumps({'type': ASYNC,
                                'data': data,
                                'response_url': response_url,
                                'command': command,
@@ -74,8 +73,8 @@ def main(event, context, log_unmatched_events=False):
             for conditional, command, handler, kind in slash_handlers:
                 text = body.get("text", [''])[0]
                 if body['command'][0] == command and conditional(text):
-                    if kind == _async:
-                        async(command, body['response_url'][0], text, inspect.getfile(handler))
+                    if kind == ASYNC:
+                        asynchronous(command, body['response_url'][0], text, inspect.getfile(handler))
                         return _lambda_response(response('one moment please...'))
                     else:
                         return _lambda_response(handler(text))
@@ -87,10 +86,10 @@ def main(event, context, log_unmatched_events=False):
                 if conditional(body['event']):
                     handler(body['event'])
                     return _lambda_response('')
-        elif body['type'] == _async:
+        elif body['type'] == ASYNC:
             for conditional, command, handler, kind in slash_handlers:
                 text = body['data']
-                if body['command'] == command and kind == _async and conditional(text):
+                if body['command'] == command and kind == ASYNC and conditional(text):
                     resp = requests.post(body['response_url'], data=json.dumps(handler(text)))
                     assert str(resp.status_code)[0] == '2', [resp, resp.text]
                     return _lambda_response('')
