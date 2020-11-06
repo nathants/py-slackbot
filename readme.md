@@ -1,4 +1,6 @@
-# simple slackbots with python and lambda
+# py-slackbot
+
+### simple slackbots with python and lambda
 
 - install [cli-aws](https://github.com/nathants/cli-aws#installation)
 
